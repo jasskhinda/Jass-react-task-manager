@@ -1,7 +1,11 @@
-import React, { useReducer, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from "react";
+import React, {
+  useReducer, useEffect, useMemo,
+  useCallback, useRef, useLayoutEffect,
+  useState, useContext
+} from "react";
 import { ThemeProvider } from "./context/ThemeContext";
 import { TaskStatsProvider } from "./context/TaskStatsContext";
-import { CategoryProvider } from "./context/CategoryContext"; // ✅ you imported this, now we'll use it
+import { CategoryProvider, CategoryContext } from "./context/CategoryContext";
 import TaskInput from "./components/TaskInput";
 import TaskList from "./components/TaskList";
 import TaskStats from "./components/TaskStats";
@@ -28,7 +32,14 @@ function taskReducer(state, action) {
 function App() {
   const [storedTasks, setStoredTasks] = useLocalStorage("tasks", initialState);
   const [tasks, dispatch] = useReducer(taskReducer, storedTasks);
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [showMyDay, setShowMyDay] = useState(false);
   const inputRef = useRef(null);
+
+  const { categories, addCategory } = useContext(CategoryContext) || {
+    categories: [],
+    addCategory: () => {}
+  };
 
   useEffect(() => {
     setStoredTasks(tasks);
@@ -50,7 +61,13 @@ function App() {
     dispatch({ type: "DELETE", id });
   }, []);
 
-  const filteredTasks = useMemo(() => tasks.filter(task => !task.completed), [tasks]);
+  const filteredTasks = useMemo(() => {
+    return tasks.filter(task => {
+      const categoryMatch = selectedCategory === "All" || task.category === selectedCategory;
+      const myDayMatch = !showMyDay || task.myDay === true;
+      return !task.completed && categoryMatch && myDayMatch;
+    });
+  }, [tasks, selectedCategory, showMyDay]);
 
   return (
     <ThemeProvider>
@@ -61,19 +78,41 @@ function App() {
               <div className="logo">✔️ TaskPro</div>
               <nav>
                 <ul>
-                  <li>All Tasks</li>
-                  <li>Home</li>
-                  <li>School</li>
-                  <li>Shopping</li>
+                  <li onClick={() => { setShowMyDay(true); setSelectedCategory("All"); }}>
+                    🌞 My Day
+                  </li>
+                  <li onClick={() => { setShowMyDay(false); setSelectedCategory("All"); }}>
+                    All Tasks
+                  </li>
+                  {categories.map(cat => (
+                    <li
+                      key={cat}
+                      onClick={() => {
+                        setSelectedCategory(cat);
+                        setShowMyDay(false);
+                      }}
+                    >
+                      {cat}
+                    </li>
+                  ))}
                 </ul>
               </nav>
+              <form
+                onSubmit={e => {
+                  e.preventDefault();
+                  const newCat = prompt("Enter new category:");
+                  if (newCat) addCategory(newCat);
+                }}
+              >
+                <button type="submit">+ New Category</button>
+              </form>
               <div className="bottom-links">
                 <button>⚙ Settings</button>
                 <button>⏏ Logout</button>
               </div>
             </aside>
             <main className="main-panel">
-              <h1>All your tasks</h1>
+              <h1>{showMyDay ? "My Day" : selectedCategory === "All" ? "All your tasks" : selectedCategory}</h1>
               <TaskInput addTask={addTask} inputRef={inputRef} />
               <TaskList tasks={filteredTasks} toggleTask={toggleTask} deleteTask={deleteTask} />
               <TaskStats />
