@@ -10,6 +10,8 @@ import TaskInput from "./components/TaskInput";
 import TaskList from "./components/TaskList";
 import TaskStats from "./components/TaskStats";
 import { useLocalStorage } from "./hooks/useLocalStorage";
+import Login from "./components/Login";
+import Signup from "./components/Signup";
 import "./App.css";
 
 const initialState = [];
@@ -35,10 +37,13 @@ function App() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [showMyDay, setShowMyDay] = useState(false);
   const inputRef = useRef(null);
+  const [authUser, setAuthUser] = useLocalStorage("authUser", null);
+  const [showSignup, setShowSignup] = useState(false);
 
-  const { categories, addCategory } = useContext(CategoryContext) || {
+  const { categories, addCategory, deleteCategory } = useContext(CategoryContext) || {
     categories: [],
-    addCategory: () => {}
+    addCategory: () => {},
+    deleteCategory: () => {}
   };
 
   useEffect(() => {
@@ -69,6 +74,29 @@ function App() {
     });
   }, [tasks, selectedCategory, showMyDay]);
 
+  // Logout handler
+  const handleLogout = () => {
+    setAuthUser(null);
+  };
+
+  // Auth screens
+  if (!authUser) {
+    return showSignup ? (
+      <Signup
+        onSignup={username => {
+          setAuthUser(username);
+          setShowSignup(false);
+        }}
+        switchToLogin={() => setShowSignup(false)}
+      />
+    ) : (
+      <Login
+        onLogin={username => setAuthUser(username)}
+        switchToSignup={() => setShowSignup(true)}
+      />
+    );
+  }
+
   return (
     <ThemeProvider>
       <CategoryProvider>
@@ -87,12 +115,26 @@ function App() {
                   {categories.map(cat => (
                     <li
                       key={cat}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
                       onClick={() => {
                         setSelectedCategory(cat);
                         setShowMyDay(false);
                       }}
                     >
-                      {cat}
+                      <span>{cat}</span>
+                      {cat !== 'None' && cat !== 'All' && (
+                        <button
+                          style={{ marginLeft: 8, background: 'none', color: '#e74c3c', border: 'none', cursor: 'pointer', fontSize: '1.1em' }}
+                          onClick={e => {
+                            e.stopPropagation();
+                            deleteCategory(cat);
+                            if (selectedCategory === cat) setSelectedCategory('All');
+                          }}
+                          title={`Delete ${cat}`}
+                        >
+                          🗑
+                        </button>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -108,7 +150,7 @@ function App() {
               </form>
               <div className="bottom-links">
                 <button>⚙ Settings</button>
-                <button>⏏ Logout</button>
+                <button onClick={handleLogout}>⏏ Logout</button>
               </div>
             </aside>
             <main className="main-panel">

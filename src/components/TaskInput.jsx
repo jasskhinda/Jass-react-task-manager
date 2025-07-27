@@ -7,7 +7,7 @@ function TaskInput({ addTask, inputRef }) {
   const [category, setCategory] = useState("None");
   const [priority, setPriority] = useState("Medium");
   const [myDay, setMyDay] = useState(false);
-  const { categories } = useContext(CategoryContext);
+  const { categories, deleteCategory } = useContext(CategoryContext);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -43,11 +43,26 @@ function TaskInput({ addTask, inputRef }) {
         onChange={(e) => setDescription(e.target.value)}
         placeholder="Description"
       />
-      <select value={category} onChange={(e) => setCategory(e.target.value)}>
-        {categories.map((cat) => (
-          <option key={cat} value={cat}>{cat}</option>
-        ))}
-      </select>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <select value={category} onChange={(e) => setCategory(e.target.value)} style={{ flex: 1 }}>
+          {categories.map((cat) => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
+        {category !== 'None' && (
+          <button
+            type="button"
+            style={{ background: 'none', color: '#e74c3c', border: 'none', cursor: 'pointer', fontSize: '1.1em' }}
+            onClick={() => {
+              deleteCategory(category);
+              setCategory('None');
+            }}
+            title={`Delete ${category}`}
+          >
+            🗑
+          </button>
+        )}
+      </div>
       <select value={priority} onChange={(e) => setPriority(e.target.value)}>
         <option value="High">🔥 High</option>
         <option value="Medium">⭐ Medium</option>

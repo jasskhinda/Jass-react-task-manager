@@ -11,8 +11,12 @@ export const CategoryProvider = ({ children }) => {
     }
   };
 
+  const deleteCategory = (name) => {
+    setCategories(categories.filter(cat => cat !== name));
+  };
+
   return (
-    <CategoryContext.Provider value={{ categories, addCategory }}>
+    <CategoryContext.Provider value={{ categories, addCategory, deleteCategory }}>
       {children}
     </CategoryContext.Provider>
   );
